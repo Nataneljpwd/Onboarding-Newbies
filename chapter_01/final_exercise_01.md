@@ -174,6 +174,8 @@
 ### Chapter 12: Kerberos Authentication
 
 51. **Q:** What is the primary purpose of the Key Distribution Center (KDC) in the Kerberos authentication system, and what are its two main components?
+51. **A:** The key distribution center primary purpose is to authenticate a user and to grant him a TGT and a session key, the 2 main componenes are the authenticating server and the ticket granting server which grants the tgt, in addition there is the db which saves the tgt and the user data
+
 52. **Q:** How does the "kinit" command contribute to the Kerberos authentication process, and what does it allow users to obtain?
 53. **Q:** Explain the concept of "Single Sign-On (SSO)" in the context of Kerberos authentication and its benefits for users.
 54. **Q:** Why is the concept of "time sensitivity" important in Kerberos authentication, and how does it enhance security?
