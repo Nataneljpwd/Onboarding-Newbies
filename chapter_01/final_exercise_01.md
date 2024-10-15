@@ -72,36 +72,18 @@
 ### Chapter 4: Hadoop YARN
 
 16. **Q:** What is YARN?
-16. **A:** YARN is a Resource negotiator and manager which allocates and manages resourses for processes or applications.
-
 17. **Q:** What are the main components of YARN?
-17. **A:** The main components of Yarn are the Resource manager which gives and also takes resources, Application manager which negotioates witht he resource manager for resources and the nodes or containers which are wher the process runs, and the Node manager which is a per machine instance that is responsible fot the containers, meaning monitoring them and reporting to the resource manager and schedualer.
-
 18. **Q:** What is the Resource Manager in YARN?
-18. **A:** The resource manager is the component that manages, allocates and takes resources.
-
 19. **Q:** What is the role of the Node Manager in YARN?
-19. **A:** The role of the node manager is to monitor and report the resource usage of the containers to the resource manager and schedualer, in addition it preforms health status updates.
- 
 20. **Q:** How does YARN provide fault tolerance?
-20. **A:** Yarn provides fault tolorence by separating job schedualing and resource management from the data components, in addition to regular health checks and restarting failed containers.
 
 ### Chapter 5: Apache Hive
 
 21. **Q:** What is Apache Hive?
-21. **A:** Apache hive is a Data warehouse application which goes over hadoop and stores data as tables and allows for sql syntax queries.
-
 22. **Q:** What is the Hive Metastore?
-22. **A:** Hive Metastore is the centralized metadata repository that stores schema and partition information about the data.
-
 23. **Q:** What is HiveQL?
-23. **A:** Hiveql is a sql like query language that can be used to query on the data in hive.
-
 24. **Q:** What are partitions in Hive?
-24. **A:** Partitions are parts of the table split between machines used in case the tables are to big in order to distribute the processing and the data which in return speeds up the process of analyzing and querying on the data and for less data to be processed using pruning.
-
 25. **Q:** Can you define SerDe in the context of Hive?
-25. **A:** SerDe is the Serializer and the Deserializer which decides how hive stores and reads the data.
 
 ### Chapter 6: Apache ZooKeeper
 
@@ -156,20 +138,10 @@
 ### Chapter 11: Partitioning
 
 46. **Q:** What is Partitioning in databases and data storage?
-46. **A:** Partitioning is a way to split data into multiple groups in order to query more effectively while pruning more data, partitioning is also used to distribute a database.
-
 47. **Q:** What are some common partitioning criteria?
-47. **A:** Range partitioning, List partitioning, composite partitioning, hash partitioning and round robin.
-
 48. **Q:** What is a Partition Key?
-48. **A:** partition key is the key according to which we partition the data which decides to which partition the record belongs.
-
 49. **Q:** Can you explain Partition Pruning?
-49. **A:** Partition pruning is when we search less data using the partitions, example, if we partition by date (default partition on many db's) and search for everything in the last year, we won't need to search through all the records that date years back and instead we will prune them and search only the partition which contains the last year.
-
 50. **Q:** How is datetime-based partitioning used in real-world scenarios?
-50. **A:** Datetime based partitioning is the default partitioning method on many databases, an example for real world use is timescaleDB which is a superset of postgresql which partitions based on datetime with compression and additional indexing by datetime which allows for very fast time series data analysis
-
 
 ### Chapter 12: Kerberos Authentication
 
