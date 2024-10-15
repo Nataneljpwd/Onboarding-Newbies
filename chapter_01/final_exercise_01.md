@@ -174,12 +174,19 @@
 ### Chapter 12: Kerberos Authentication
 
 51. **Q:** What is the primary purpose of the Key Distribution Center (KDC) in the Kerberos authentication system, and what are its two main components?
-51. **A:** The key distribution center primary purpose is to authenticate a user and to grant him a TGT and a session key, the 2 main componenes are the authenticating server and the ticket granting server which grants the tgt, in addition there is the db which saves the tgt and the user data
+51. **A:** The key distribution center primary purpose is to authenticate a user and to grant him a TGT and a session key, the 2 main componenes are the authenticating server and the ticket granting server which grants the tgt, in addition there is the db which saves the tgt and the user data.
 
 52. **Q:** How does the "kinit" command contribute to the Kerberos authentication process, and what does it allow users to obtain?
+52. **A:** Kinit is used to get the TGT from the KDC, it allows users to obtain the TGT from the Principal.
+
 53. **Q:** Explain the concept of "Single Sign-On (SSO)" in the context of Kerberos authentication and its benefits for users.
+53. **A:** Single sign on is a concept that allows a user to use one password to connect to multiple services, it benefits users by not having to remember a password for each service and instead using the same password for multiple services.
+
 54. **Q:** Why is the concept of "time sensitivity" important in Kerberos authentication, and how does it enhance security?
+54. **A:** Time sensitivity is important to kerberos because it makes it so that even if someone steals the TGT, It will only be active for a short time and not minimize the damage that can be done.
+
 55. **Q:** In what real-world scenarios or use cases is Kerberos authentication commonly employed, and how does it contribute to security and ease of use in those contexts?
+55. **A:** Windows authentication is using kerberos as it's base, Network security (AD of windows is also based on Kerberos), Some distributed systems (like hadoop) use kerberos to securely transfer data and to keept the data secure, and single sign on services often use kerberos.
 
 ### Chapter 13: Oozie Workflow Scheduler
 
