@@ -22,52 +22,117 @@
 
 1. **Q:** What is Apache Hadoop?
 1. **A:** Hadoop is a distributed file system that works based on a master-slave architecture which was built with the assumption that hardware failure is the norm.
+Hadoop is unique in comparison to other DFS because hadoop was built to scale from multiple compters to a few thousands of computers easily while utilizing the computational power and the storage of all the computers, in addition, hadoop processes and stores the data in the same place rather than moving the data to a different place to be processed.
+Hadoop also contains YARN which allows for better and more efficient resource utilization in addition to allowing multiple processes to run in parrallel.
+Hadoop is a rack aware system which means that hadoop knows the physical network topology (through a resolve api call through rpc) and can place the data in those placed accordingly to ensure maximum fault tolorence evenif one rack goes down
+Before hadoop, storage and processing of large quantaties of data was very hard and required a lot of expensive hardware and cost a lot to run.
+after hadoop came, it allowed to store large quantaties of data and to scale to an unlimited number of nodes which was not possible before.
+
+Hadoop started in 2006 by Doug Cutting (working at yahoo at the time) after he and Mike Cafarella had worked on the apache Nutch project which was supposed to be a search engine which could index 1 billion pages but after Doug realized that it could only scale to 20-40 nodes and that it would be too expensive to run, so Doug decided to create a new project named hadoop (the name of his son's yellow elephant toy) and in 2007, yahoo was able to scale hadoop to 1000 nodes and use it,
+in 2008, yahoo has open sourced the project and in july they were able to scale it to 4000 nodes.
+In 2009, Doug left Yahoo and went to work at cloudera, in 2011 Apache released Apache hadoop version 1.0 and in 2013 Hadoop 2.0.6 was available and in 2017 version 3.0 came out.
+The main problems with hadoop are that hadoop is very bad with small files because of the way it stores data, for each block, the namenode stores metadata about the files (the locations of them in datanodes and the file system structure).
+now, instead of managing a small number of computers, we need to manage all the nodes either ourselves or through a vendor providing us managed hadoop cluster.
+
+
 
 2. **Q:** Can you name a few vendor-specific distributions of Hadoop?
-2. **A:** Cloudera Distribution Platform, Amazon Elastic MapReduce, Microsoft azure HDInsight.
+2. **A:** *Cloudera Distribution Platform* - A managed distribution by cluodera which includes a cloudera cluster manager, integrated security and data governance, *Amazon Elastic MapReduce* - A managed distribution of hadoop with a pay-per-use billing system, automatic scaling and easy integration with other aws products, *Microsoft azure HDInsight* - includes integration with microsoft tools like Power BI and Azure data factory, also billed as a pay-per-use patform.
+
+
 
 3. **Q:** What are the three modes in which Hadoop can run?
-3. **A:** **Standalone (default)** - where it runs as a single java process, **Psuedo Distributed** - where there is a single node cluster (many processes on one machine) which simulates the real world but still runs on one machine which is used to test and debug, **distributed** - a multi node cluster which includes the Namenode, Secondary Namenode and the Datanodes.
+3. **A:** **Standalone (default)** - where it runs as a single java process, used to debug and make simple POC's just to test on a local machine with a small amount of data and is easy and quick to setup, mostly used for quick tests, **Psuedo Distributed** - where there is a single node cluster (many processes on one machine) which simulates the real world but still runs on one machine which is used to test and debug more like a staging area but is more resource intensive and takes more time to setup, **distributed** - a multi node cluster which includes the Namenode, Secondary Namenode and the Datanodes, this is used ion the real world where we need to actually process and store very large amounts of data quickly and efficiently, it is what we use to make big data queries and get valuable knowledge from them.
+
+
 
 4. **Q:** What is the primary role of the `hadoop-env.sh` configuration file?
-4. **A:** the primary role is to setup hadoop process and other java-related processes like memory for the java process.
+4. **A:** The primary role of the hadoop-env is to set environment variables for hadoop and customize the options of the hadoop processes, like client ops (port and host of the cluster), the size of the Mapreduce heap, the classpath of the hadoop scripts and more, in addition to setting up various jave related options like the Hadoop classname which sets the java class against which the hadoop specific variables that it will run against when the excecution of a process continues
 
 5. **Q:** What purpose does the `core-site.xml` file serve?
 5. **A:** The purpose of the core site is to configure mostly IO related things and also the filesystem and network addresses.
+some examples include: 
+ - [x] hadoop.security.authentication - either simple (no auth) or kerberos, sets whether to use authentication and which type
+ - [x] hadoop.tmp.dir - the base directory where hadoop can store temporary files
+ - [x] hadoop.security.dns.nameserver - the hostname / ip addr of the dns server which the kerberos service nodes use to their own hostname for kerberos login
+ - [x] io.bytes.per.checksum - the number of bytes to use per checksum, must be less then io.file.buffer.size
+ - [x] io.file.buffer.size - sets the buffer size for seqeunce files during read and write opperations (sequence files are binary files containing key-value paris which were created to solve some of the small file problems in hadoop by having multiple files inside one block file)
 
 ### Chapter 2: Hadoop Distributed File System (HDFS)
 
 6. **Q:** What is HDFS?
 6. **A:** HDFS is the Hadoop distributed system which is basically like a regular file system but it is distributed between multiple computers.
+HDFS is built for fault tolorence meaning, it was built with the idea that hardware failures are a norm and happen a lot so hdfs uses replication and redundency to keep the system highly available and fault tolorent.
+HDFS is the primary storage of the Hadoop applications, based on java and which contains data nodes and name nodes, the *name nodes* are the nodes which monitors all the data stored, replica counts and the amount of data nodes which are alive and the FS structure.
+the *data node* is the node that stores the data itself in the form of blocks which have a max size of a preconfigured amount, default is usually 128 MB but sometimes can be 64 or 256 MB by default.
+It is a rack aware system which means that it knows the physical topology of the network and the connected nodes which it uses to enhence fault tolorence by splitting replicas to different racks (an example with 3 replicas and 2 racks, hadoop will store one replica on the same rack with the name node and 2 more replicas on different racks in a different location / switch).
+
+provides High availability using 2 Name nodes with one being active and one being a standby, in case the active node will fail.
+
+Hdfs also has journal nodes which store changes to the file system (file addition, deletion and more) which is an edit log which is used to build the FSImage and the file system structure in the ram.
+
+Hdfs knows that "moving data is more expensive than moving computation" so it has minimal data movement and makes most of the computations in the same node that stores it's data.
 
 7. **Q:** What is the role of the NameNode in HDFS?
 7. **A:** The role of the NameNode is to save metadata about the file and to manage where they are saved, in addition to managing and saving the FS structure and also replicate / delete replications as needed.
+the metadata is stored in memory and also in a persistant FSImage file, in addition to a local editlog which includes the logs of all the eddits that have happened to the file system structure.
+the namenodes also monitors all the data nodes and knows which are alive and which are down.
 
 8. **Q:** What is a DataNode in HDFS?
 8. **A:** A DataNode is the node that saves the data itself in the form of blocks with a max size that was configured beforehand in the hdfs-site.
+The datanode also performs the computations and analysis of the data on the machines which allows for less movement of data.
+the data nodes send a block report every 6 hours to the namenode which includes all the blocks stored in this data node, in addition to the name of the file, the path ("virtual path") and the block count.
+the data node stores metadata about the file as well, with the same name of the file (blk_{GeneratedNumber}) with the suffix ".meta" which includes the file name, the file path, the block count, the block id, permissions of the file, owner, updated at and other time metadata and file size.
 
 9. **Q:** How does HDFS achieve fault tolerance?
-9. **A:** Hdfs achieves fault tolorence by using redundency, replication and rack awareness, in addition to journal nodes and secondary namenode and more.
+9. **A:** Hdfs achieves fault tolorence by using *redundency and replication* - duplicating the data multiple times and storing it on different machines so that if hardware failure were to occur, other machines store the replicas so they can be read from there, *rack awareness* - hdfs knows the physical network topology of the datanodes and namenodes and it uses it to better spread the replicas so that even if a rack falls or a network failure occurs, there will still be available replicas on a different switch/rack (if 3 replicas are set, one replica will be stored in the same place as the namenode and the 2 others will be stored in a different rack), in addition to *journal nodes* - nodes that store edit logs of the file system which can be used to reconstruct the file system structure in case of namenode failure and *secondary namenode* - a namenode that takes the edit logs file from the main namenode and constructs the fs image using the current fsimage and updates it in the main namenode, the reason for this is that usually the fs image only gets updated when the namenode restarts which can take a while which will cause the name node to fail the readiness check or crash, so the secondary namenode was created to mitigate this issue by periodically reconstructing the fs image and clearing the edit logs and *Standby namenode* - which waits and periodically syncs with the main name node and is there in case the main namenode crashes, the secondary namenode starts getting the requests and monitoring the dœ†a nodes.
 
 10. **Q:** Can you explain rack awareness in HDFS?
 10. **A:** Rack awareness means that hadoop knows the physical network topology of the network, which allows hadoop to distribute the files such that even if a rack crashed, the data is still available.
+the rack awareness is done by the name node and the job manager which send an rpc resolve request to to all the nodes and use it to get the rack and the host of the node when it starts.
+the practical use of the rack awareness comes when deciding where the replications go, in the case of 3 replications, one replica will be stored in the same rack as the name node and the other 2 will be stored on a different rack, in order to have the least amount of traffic between racks and to allow for fault tolorence in the case a rack falls.
 
 ### Chapter 3: MapReduce Programming Model
 
 11. **Q:** What is MapReduce?
-11. **A:** MapReduce is the process / programming model which works with 3 parts, mapping the data - changing / transforming / counting with the data, then shuffle where we move data with the same keys to the same nodes and then the reduce where we reduce all the results from the map to a single result, Map reduce allows for batch parrallel processing.
+11. **A:** MapReduce is the process / programming model which works with 3 parts, mapping the data - changing / transforming / counting with the data, then shuffle where we move data with the same keys to the same nodes and then the reduce where we reduce all the results from the map to a single result (could be many key value pairs), Map reduce allows for batch parrallel processing.
+Map reduce is implemented by implementing 2 functions, the Mapping function and the Reducing function, the mapping function transforms the data and makes aggregations or some other analysis on the data and returns key value pairs.
+the Reduce function takes key value pairs and reduces them by key (example is counting or adding values for the same keys) to a single result which can have multiple key value pairs with no duplicate keys.
+mapreduce was introduced in 2004 to allow for large scale distributed computing.
+Map reduce works by running the map part on all machines with data, then shuffling the data according to the keys and then reducing, all happening on as many machines as possible on the cluster in parrallel to lower the time of processing.
+the reducing part happens on the same machines that did the mapping part so that less data will be moved.
+mapreduce has simplified data processing on large clusters.
+the main benefits of mapreduce is that it allows for parallel computing on large clusters with ease without moving data too much and it allows to do almost all needed analyzations on the data and is very scaleable and easy to design and schedual.
+the main draw back is that mapredce is very rigid, meaning that the only thing we can do with it is mapping and then reducing data to a single result.
+Map reduce integrates with hadoop using hadoop-mapreduce which is a framework for running mapreduce on top of an hdfs cluster.
+the mapreduce framework consists of one Job tracker node (one per cluster) and one Task tracker per cluster node which manage the running of the map reduce functions.
+after creating the mapreduce functions we can use the next command to run it:
+
+```bash
+bin/hadoop jar /usr/useName/COMPILED_JAR_NAMR.jar java.package.path /usr/userName/input/directory /usr/userName/output/directory
+```
+which will use the Job tracker to start this job which will call the task trackers to start these tasks on each node
+
 
 12. **Q:** What is the role of a Mapper in MapReduce?
-12. **A:** The mapper maps or changes the data.
+13. **A:** The mapper maps or changes the data on the machines, this is the part where we can transform the data and change it so that when reduced, it can be analyzed.
+gets inputs as key value pairs, transforms and returns key value pairs as well or nothing / null.
+the reducer is the one that chooses the grouping, can be set in java using an outputKeyComparator class, and the way the values get aggregated is using the Combiner class in java.
 
 13. **Q:** What is the role of a Reducer in MapReduce?
-13. **A:** The reducer shuffles and reduces the data from a lot of results to a single result (aggregates all the data into a single result).
+14. **A:** The reducer shuffles and reduces the data from a lot of results to a single result (aggregates all the data into a single result which can be more than one key value pair).
+The reducer takes the same key results and aggregates them into one result, multiple same-key, value pairs get transformed into a single key value pair.
+the reducer also sorts first by keys so that all key-value pairs go to the same machine and then also sorts then by value.
 
 14. **Q:** What is meant by "Shuffling" in MapReduce?
-14. **A:** Moving the results from the map such that results with the same keys end up in the same node and assigning a reducer to the result.
+14. **A:** Moving the results from the map such that results with the same keys end up in the same node and assigning a reducer to the result, shuffling is done by 2 sorts, one sort by the key and the other sort by the value.
+the first sort happens between workers meaning data is moved between workers, and the second shuffle is done inside the node after the first shuffle.
 
 15. **Q:** Can a MapReduce job have zero Reducers?
-15. **A:** Yes, the reducer part of the Mapreduce is optional.
+15. **A:** Yes, the reducer part of the Mapreduce is optional, not all works require reducing, an example is converting formats, we would like to map the data but wont need to reduce it.
+
+source:
+https://www.databricks.com/glossary/mapreduce#:~:text=Unlike%20the%20map%20function%20which,the%20reduce%20function%20is%20optional.
 
 ### Chapter 4: Hadoop YARN
 
@@ -88,7 +153,9 @@
 ### Chapter 6: Apache ZooKeeper
 
 26. **Q:** What is Apache ZooKeeper and what role does it play in a distributed environment?
-26. **A:** Zookeeper is a distributed configuration manager  and coordinator that holds different configurations for different systems which allows different systems to coordinate with each other and allows for a single source of configuration change.
+26. **A:** Zookeeper is a distributed configuration manager  and coordinator that holds different configurations for different systems which allows different systems to coordinate with each other and allows for a single source of  truth for configuration.
+Zookeeper allows to coordinate between different nodes on a distributed system, allows for rolling configuration changes and helps in leader election and distributed locks.
+Zookeeper also provides functionality of failover recovery
 
 27. **Q:** Can you explain the concept of znodes in ZooKeeper?
 27. **A:** ZNodes are Like data nodes which can have children, which in turn acts like files and directories.
