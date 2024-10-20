@@ -8,7 +8,6 @@
 - Familirize yourself with the Hadoop ecosystem and its role in big data processing.
 - Start to work with time estimation and planning.
 - Learn to ask questions and how to find the answers with deep understanding of the whole concept.
-
 :warning: **Note:**
 - Maybe this is the first time you need to answer questions with your own words, so take your time to read the instructions carefully and ask your mentor if you have any questions.
 - Take time to think about the answers, don't just copy-paste from the internet.
@@ -19,6 +18,29 @@
 - Reflection on the day's learnings and exploration of potential project applications.
 
 ### Chapter 1: Introduction to Big Data and Hadoop
+
+## Additional questions:
+
+- [x] *Hdfs Architecture*:
+  - [ ] *Hdfs 1.x*: In hadoop version 1, there was only one Namenode and it was the sigle source of failure of the system.
+  - [ ] *Hdfs 2.x*: Hadoop version 2 introduced which included a standby Namenode which in case of failure of the main name node, it replaces it, thus, removing the single source of failure, however, the name node recovery has to be done manually.
+  - [ ] *Hdfs 3.x*: Introduced support for multiple active namenodes which allow for High availability and now, namenode recovery is done automatically.
+
+- [x] *Hdfs VS S3*: 
+  - [ ] *Hdfs*: A distributed file system that allows for storage of files in a hirarchiel FS, and allows for data querying and processing using tools such as MapReduce and Spark, in addition to the ability to utilize the GPU (as of hadoop 3.x) along with spark, however hdfs is usually self managed or managed using external vendors which come with a not so small cost, while the availability of these systems is lower than the availability of S3 which is managed by amazon and and is cheaper.
+        Hdfs also allows for querying on the data using apache Impala, Hive and Hbase 
+  - [ ] *S3* (Simple Storage Service): can only store and retrieved objects by their key / name, no querying can be done on the s3 and it is not a file system, meaning there are no folders, only file names, S3 allows to tag and store some additional metadata along with the file, has a very simple REST api that can be used and is managed by amazon, with other S3 compatible systems such as Minio that are also Object storage.
+        S3 is relatively cheap, as you only pay for what you use, in addition to it being managed by Amazon which have the resources and the knowledge to provide extremely high availability (11 nines!) with good performance and a good cost.
+
+- [x] *Hdfs use cases*: to store large amounts of files that need to be searchable (Websites and text / pdf files), hadoop is often used in the finance industry for risk modelling (using big data that is stored in hdfs and analyzing with mapreduce and spark), can also be used like a regular file / block storage that can handle a lot of data and scale easily while being reliable, Hdfs can also be used along with analytics tools to detect fradulent activity.
+
+- [x] *Terms*:
+  - [x] *Failover*: The process of handling a node / master failure, when a leader fails, a failover event is triggered and a leader re election starts.
+  - [x] *Fencing*: Isolation of a node or shared resources when a node seems to be malfunctioning.
+  - [x] *Zkfc*:  The Zookeeper Failover Controller which is responsible for automatic failover in distributed systems like Hadoop (namenode failover) and Kafka (Controller failover)
+  - [x] *Quorum*: Quorum (in zookeeper) is the smallest amount of running servers of a distributed system in order for it to work and be available for the clients, usually the formula for a quorum is that if you have 2n + 1 nodes, n nodes can fail and the system will keep working as it worked before.
+  The quorum can also be used to elect leaders, by having a quorum of the in sync nodes that can become leaders in the case of node failure.
+
 
 1. **Q:** What is Apache Hadoop?
 1. **A:** Hadoop is a distributed file system that works based on a master-slave architecture which was built with the assumption that hardware failure is the norm.
@@ -155,44 +177,73 @@ https://www.databricks.com/glossary/mapreduce#:~:text=Unlike%20the%20map%20funct
 26. **Q:** What is Apache ZooKeeper and what role does it play in a distributed environment?
 26. **A:** Zookeeper is a distributed configuration manager  and coordinator that holds different configurations for different systems which allows different systems to coordinate with each other and allows for a single source of  truth for configuration.
 Zookeeper allows to coordinate between different nodes on a distributed system, allows for rolling configuration changes and helps in leader election and distributed locks.
-Zookeeper also provides functionality of failover recovery
+Zookeeper also provides functionality of failover recovery and automatic leader election
 
 27. **Q:** Can you explain the concept of znodes in ZooKeeper?
-27. **A:** ZNodes are Like data nodes which can have children, which in turn acts like files and directories.
+27. **A:** ZNodes are Nodes which store data, are similiar to files and directories, they can be used to store data in a distributed system. z nodes contain data and the version of the data to allow for versioning and also include timestamps for cache validation.
 
 28. **Q:** How does ZooKeeper handle coordination and configuration management across distributed systems?
-28. **A:** Zookeeper handles coordination and configuration management using watches where clients can listen to changes, and atomicity and sessions which aid in the process of the coordination
+28. **A:** Zookeeper handles coordination and configuration management using watches (watches are a mechanism that allows sending notifications to clients through pushing and not pulling, to which the clients whome are subscribed can react accordingly) where clients can listen to changes, and atomicity (every action is atomic, meaning that there could be no race conditions and every action is either finished fully or not done at all) and sessions (client connect to the zookeeper server using sessions which are connections that are kept alive using heartbeats which are sent in fixed intervals which are configured using the zookeeper.connection.timeout.ms configuration option) which aid in the process of the coordination
+Zookeeper uses a shared hirarchiel namespace and znodes to create a system similiar to a file system which allows for coordination between the distributed nodes
+Zookeeper exposes a naming service which allows to identify nodes by name, similiar to a dns but for nodes in a distributed system, this helps nodes coordinate by simplifying the process of node discovery.
+Zookeeper also include cluster management which include the status of the nodes in the cluster in real time.
+Leader election by using ephermal nodes and watches, using a session that creates the ephermal node (a node alive while the session is active) and sending notifications to the system when the current leader dies/becomes unavaliable.
+Locking and syncronization - zookeeper also exposes a locking and a syncronization service which allows for distributed locking (for data modification and could also be used for almost instant standby service takeover) and syncronize between processes that use the same resourceds.
+Zookeeper also has a highly reliable data registry, meaning that even if some nodes fail, the data is still available through the use of data redundency.
+
 
 29. **Q:** What are ephemeral nodes and sequence nodes in ZooKeeper, and how are they used?
-29. **A:** *ephermal nodes* are nodes which last for as long as the session is kept alive which can be used for master / leader allocation and *sequence nodes* are nodes which have an assigned unique number, can be used for distributed counters.
+29. **A:** *ephermal nodes* are nodes which last for as long as the session is kept alive which are often used used for master / leader allocation with a watch, where the system watches the ephermal node and if it goes down, the system gets a notification and knows it needs to reelect a leader, each ephermal node exists because of a session and per session there can only be one node and *sequence nodes* are nodes which have an assigned unique number, can be used for distributed counters, a use case can be web analytics like visit count and or track interactions of a user with our app (could be likes/serches/posts/comments).
+there can be only one sequence node with a specific id and there cannot be nodes with duplicate id's
+we can use ephermal nodes and sequence nodes at the same time, there could also be a sequence node that is also an ephermal node.
+
 
 30. **Q:** How does ZooKeeper ensure data consistency and reliability across distributed nodes?
 30. **A:** Zookeeper ensures consistency and reliability by replication and only the primary node being the one interacted with, in adition to atomicity.
+Zookeeper ensured data consistency by using Atomicity, meaning that all operations either fully complete or don't complete at all, which prevents data races making the data consistant between all nodes (there won't be a situation when one node is updating data and another one is reading and so data is not consistant between reads)
+Zookeeper also allows for leader election in distributed systems by using ephermal nodes and watches to elect new leaders when the current leader dies, it notifies the system through the watch that the leader has dies so it knows it needs to re-elect a leader (to re-elect a leadet there needs to be a majority of the cluster for the cluster to be running and be able to elect a new leader).
+Zookeeper also knows how to handle a split brain condition, a split brain condidtion is when a cluster gets divided by a connection getting cutoff, the cluster is split and the leader stays on one of the clusters (either the 'left' or the 'right' cluster), if the leader was on the cluster with the majority of the system, that part of the cluster works as it worked before without any interference other than maybe some latency increase, and when the connection goes back, the nodes connect and syncronize with the leader.
+in the case where the leader is not on the part with the majority (lets call it the left part), a leader re-election happens in the majority part (which we will name the right part) and the cluster is working as it was but might be desynchronized from the leader, however the right part of the cluster re elects a leader and works as it did before with possible data loss, after the clusters reconnect, a new leader election happens with the whole cluster and it keeps working as it worked before.
 
-### Chapter 7: Apache HBase
+in both cases, the left cluster gets stuck in leader election and does not accept client connections which means that the left part is down.
+    
+##i Chapter 7: Apache HBase
 
 31. **Q:** What is Apache HBase?
 32. **Q:** What is a Row Key in HBase?
 33. **Q:** What is a Column Family in HBase?
-34. **Q:** How oes HBase ensure data availability and fault tolerance?
+34. **Q:** How does HBase ensure data availability and fault tolerance?
 35. **Q:** What is the role of ZooKeeper in an HBase environment?
 
 ### Chapter 8: Apache Kafka
 
 36. **Q:** What is Apache Kafka?
 36. **A:** Kafka is a distributed, replicated Streaming pub sub model which allows for event driven and event streaming architecture.
+Kafka has a few main parts in it's architecture, the first being the the kafka broker (or a kafka server) and a kafka controller which is one of the kafka brokers in the cluster, only one active controller exits in a cluster at any given time, it is elected using the zookeeper ephermal nodes, each broker tries to create an ephermal node and the first one to create the node, aquires a lock and all the other brokers that didn't aquire the lock, bring the ephermal node down.
+the kafka controller is responsible for the states of partitions and replicas, assigning partition leaders (are the partitions from which all the other brokers copy the data from that partition), monitoring the cluster (knowing which brokers are up and re-electing a leader as needed).
+the kafka brokers are managing the topics and the partitions which allow to read (consume) and write (publish) data to the partitions which are queues.
+kafka works by saving all the data on persistant disks while maintaining high throughput and low latency, it does it by using batching of data, sequential disk reads (which are reads that happen on disk where the data is stored sequentially meaning one after the other, this is done to minimize disk seek which can take up to 10 ms, and also because sequential disk reads on regular hdd's have speeds of 600MB/s where random disk reads can be as slow as 10 kb/s which is way slower) and utilizing the os pagecache and minimum byte copies along with batching to allow for high throughput and fast operations.
+kafka works in an exactly once model meaning that each message is delivered exactly once and processed *exactly once*, the other ways kafka can work is with the at least once which is used for failover when a node reads and falls before processing and acknoledging the read and *at most once* which means that some data might be lost but data is processed at most one time or never.
+
 
 37. **Q:** What are Topics in Kafka?
-37. **A:** Topics in kafka are a way to organize data, a topic is like a queue of data (could be multiple queues for distributed purposes and for performance improvements) which we can subscribe or publish to.
+37. **A:** Topics in kafka are a way to logically divide data and different event types or events of streams to different names, kafka topics are built with partitions which are queues that hold tha data and allow to read them, however, unlike a regular queue, after data is read, it is not deleted.
 
 38. **Q:** What are Partitions in Kafka?
-38. **A:** Partitions in kafka are a single queue which contain data inside of them, only one consumer group can be connected to the same partition
+38. **A:** Partitions in kafka are a single queue which contain data inside of them, only one consumer can be connected to the same partition, which is a part of a consumer group, a consumer group is a group of multiple kafka consumers which consume the same data, can be multiple replicas of a microservice that all read from the partition, in kafka, the offset of the reader from the partition is stored per consumer group, topic and partition as a single number, in order to guarantee exactly once delivery.
+
 
 39. **Q:** What is the role of a Broker in Kafka?
 39. **A:** The broker in kafka decides to which partition you will write or read and assigns partitions and stores data across multiple partitions (A kafka instance).
+The broker stores the offset of the reading and sends the consumer the needed messages from the topic, when publishing, the broker chooses to which partition the data will go according to the key (similiar to hash load balancing) (the broker is to whom you publish or read the data from).
+when producer published the data, he connects to a broker for a specific topic, the broker then decides to which partrition to write the message according to the key of the data, then the consumer can request the messages (or subscribe with a long poll), the broker checks the offset of the consumer group the consumer connected with to the broker and sends the data according to the offset and then the client recieves the data (usually the data is compressed when the producer sends the data and decompressed when the consumer reads the data in order to reduce network load).
+Kafka also allows the use of acknoledgmentes, where after the data is sent, we wait for all the In Sync Nodes or ISR to receive the replica and send an ack to the replica leader, it sends an ack to the producer and also has acknoledgmentes to the consumer, where the consumer can either send the ack after data processing before the storing or after the storing before the processing which give us at most once and at least once uses respectively.
+
 
 40. **Q:** What is the difference between a Kafka Producer and a Consumer?
 40. **A:** kafka producer can only write data to the topic while a consumer reads data from the topic.
+the producer writes to a topic and the broker decides to which partition it goes according to the key, and the consumer reads from a specific partition as a part of a consumer group, which share the same offset for reading from the topic, each consumer is assigned one partition, meaning only one consumer group can read from a partition, the partition is assigned to a consumer group by lexographical order.
+
 
 ### Chapter 10: Apache Impala
 
@@ -212,20 +263,53 @@ Zookeeper also provides functionality of failover recovery
 
 ### Chapter 12: Kerberos Authentication
 
+AS - Authenticating server
+TGS - Ticket granting server
+TGT - Ticket granting ticket
+KDC - Key distribution center
+
+
 51. **Q:** What is the primary purpose of the Key Distribution Center (KDC) in the Kerberos authentication system, and what are its two main components?
 51. **A:** The key distribution center primary purpose is to authenticate a user and to grant him a TGT and a session key, the 2 main componenes are the authenticating server and the ticket granting server which grants the tgt, in addition there is the db which saves the tgt and the user data.
+The process of authenticating a user has 6 steps:
+
+- Initial client auth request: the user asks for his TGT, here no sensitive info is sent so the data is not encrypted, the AS checks with the KDC if the user exists and if it is it retrieves the users private key.
+
+- Verification of client credentials: if the user does not exist, the authentication process stops here, if the username is found, the AS sends back the TGT fromn the TGS which is encrypted with the TGS secret key and the encrypted session key which it generated.
+
+- Message decryption: the client uses the user hash or the secret key to extract the the TGT and the session key.
+
+- Request for access with the TGT: The client requests from the TGS a service ticket using the TGT and sends the service ticket if the client has the permissions to acess the service.
+
+- Application server request: The client sends the request to the service it wants to access with the service ticket recieved in pt. 4, if the service authenticates the request, the client can access the service.
+
+- Application server response: If the client requsts the server to authenticate itself, in this step, the server decrypts the session key using it's secret key and then the session key decrypts the service ticket to ensure that both the client and the server are authenticated and then the server sends a authenticated and then the server sends a response to the client that both are authenticated
+
+
 
 52. **Q:** How does the "kinit" command contribute to the Kerberos authentication process, and what does it allow users to obtain?
-52. **A:** Kinit is used to get the TGT from the KDC, it allows users to obtain the TGT from the Principal.
+52. **A:** Kinit is used to get (or renew) the TGT from the KDC, it allows users to obtain the TGT from the Principal (a string containing the username and possibly the realm and looks like so: username@realm, it is what kerberos uses to authenticate users).
+kinit will initialize the credentials cache and the Principal, if you do not provide a principal and use the -s flag, then the cached principal will be used.
+if you give the cache a name with the -c flag, the cache will be saved and can be used later on, otherwise, the default cache will be used.
+
 
 53. **Q:** Explain the concept of "Single Sign-On (SSO)" in the context of Kerberos authentication and its benefits for users.
 53. **A:** Single sign on is a concept that allows a user to use one password to connect to multiple services, it benefits users by not having to remember a password for each service and instead using the same password for multiple services.
+in kerberos, it means that you can use one TGT to get other service tickets and access those services if you are allowed without having to reauthenticate with each service you interact with.
 
 54. **Q:** Why is the concept of "time sensitivity" important in Kerberos authentication, and how does it enhance security?
 54. **A:** Time sensitivity is important to kerberos because it makes it so that even if someone steals the TGT, It will only be active for a short time and not minimize the damage that can be done.
+It is implemented by the tickets having an expiration data and users having to authenticate with the service every time before interacting, so if the TGT expires, the user has to either renew the TGT using the kinit command or re authenticate.
+the expiration of the ticket can be viewed from the cache using the ```bash klist -c``` command where it will be shown, or in the TGT file.
 
 55. **Q:** In what real-world scenarios or use cases is Kerberos authentication commonly employed, and how does it contribute to security and ease of use in those contexts?
 55. **A:** Windows authentication is using kerberos as it's base, Network security (AD of windows is also based on Kerberos), Some distributed systems (like hadoop) use kerberos to securely transfer data and to keept the data secure, and single sign on services often use kerberos.
+Kerberos is also used in hadoop to keep the data encrypted and secured in motion and when stationary (with authenticated access only).
+because hadoop is one of the largest distributed systems (can have a lot of nodes) which need to constantly communicate with each other, it means that all those nodes need to call the TGS and the AS constantly to get tokens to be able to talk between one another which can cause latency and a lot of traffic in the cluster which may slow down the system.
+So to combat this, hadoop has built it's own layer over kerberos, called hadoop tokens which are granted by hadoop serices.
+an example is the namenode which when a request needs read access to a block, the namenode grants a token which allows the caller to access thoses block, when trying to access the block, the caller needs to include all the tokens for all the blocks he wants to read.
+The block tokens don't contain data about the principa from which they query the data or the Principal, instead they just say that the caller has access to a specific block.
+
 
 ### Chapter 13: Oozie Workflow Scheduler
 
