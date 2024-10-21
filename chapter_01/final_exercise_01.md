@@ -28,9 +28,15 @@
 
 - [x] *Hdfs VS S3*: 
   - [ ] *Hdfs*: A distributed file system that allows for storage of files in a hirarchiel FS, and allows for data querying and processing using tools such as MapReduce and Spark, in addition to the ability to utilize the GPU (as of hadoop 3.x) along with spark, however hdfs is usually self managed or managed using external vendors which come with a not so small cost, while the availability of these systems is lower than the availability of S3 which is managed by amazon and and is cheaper.
+        Hdfs requires a SATA drive, which are relatively cheap and provide large amounts of storage.
+        for the nodes, it is recomended to use 8 to 16 cores, along with 32 to 64 gb ram or 16 gb of ram for the DN, with a Network of at least 1gbps
         Hdfs also allows for querying on the data using apache Impala, Hive and Hbase 
-  - [ ] *S3* (Simple Storage Service): can only store and retrieved objects by their key / name, no querying can be done on the s3 and it is not a file system, meaning there are no folders, only file names, S3 allows to tag and store some additional metadata along with the file, has a very simple REST api that can be used and is managed by amazon, with other S3 compatible systems such as Minio that are also Object storage.
+        By default Hdfs replicates the data 3 times which can use a lot of data and has a very high overhead, however, as of hdfs version 3, it uses erasure coding which allows for only 50% overhead while maintaining the same redundency as the 3 replica.
+  - [ ] *S3* (Simple Storage Service): can only store and retrieved objects by their key / name, and querying can be done on s3 only by moving the data to a different place like spark or Hive and then it is possible to query the data and it is not a file system, meaning there are no folders, only file names, S3 allows to tag and store some additional metadata along with the file, has a very simple REST api that can be used and is managed by amazon, with other S3 compatible systems such as Minio that are also Object storage.
         S3 is relatively cheap, as you only pay for what you use, in addition to it being managed by Amazon which have the resources and the knowledge to provide extremely high availability (11 nines) with good performance and a good cost.
+        S3 also uses Erasure coding to have a smaller replication overhead so it allows for redundency without too large of an overhead.
+        S3 requires also higher on prem costs, because the recomended S3 on prem hardware reqs are a NVME drive (which is very fast but also very very expensive), along with 256 gb of ram and 100 GBE network, because 
+        So on prem it is slightly more expensive than hadoop.
 
 - [x] *Hdfs use cases*: to store large amounts of files that need to be searchable (Websites and text / pdf files), hadoop is often used in the finance industry for risk modelling (using big data that is stored in hdfs and analyzing with mapreduce and spark), can also be used like a regular file / block storage that can handle a lot of data and scale easily while being reliable, Hdfs can also be used along with analytics tools to detect fradulent activity.
 
@@ -43,10 +49,12 @@
 
 
 1. **Q:** What is Apache Hadoop?
-1. **A:** Hadoop is a distributed file system that works based on a master-slave architecture which was built with the assumption that hardware failure is the norm.
-Hadoop is unique in comparison to other DFS because hadoop was built to scale from multiple compters to a few thousands of computers easily while utilizing the computational power and the storage of all the computers, in addition, hadoop processes and stores the data in the same place rather than moving the data to a different place to be processed.
+1. **A:** Hadoop is a distributed data processing framework that works based on a master-slave architecture which was built with the assumption that hardware failure is the norm and allows for big data processing with easy scaling, to thousands of nodes.
+Hadoop has a few components in it that allow for optimal resource usage and job schedualing while allowing multiple jobs simountaneusly, Hadoop also includes Hdfs which is a distributed file system that saves tha
 Hadoop also contains YARN which allows for better and more efficient resource utilization in addition to allowing multiple processes to run in parrallel.
+Yarn works with a quite simple architecture, when it has the resource manager which is responsible for managing the resources of the cluster, the Node manager which Sends the status of the Node to the resource manager and monitors the resources of the Node, then it has the Application managers which are responsible for negotiating resources for an app or a process that we want to run.
 Hadoop is a rack aware system which means that hadoop knows the physical network topology (through a resolve api call through rpc) and can place the data in those placed accordingly to ensure maximum fault tolorence evenif one rack goes down
+Hadoop allows for other processing frameworks to run on it, including Spark, MapReduce, Hive, Hbase and Zepplin.
 Before hadoop, storage and processing of large quantaties of data was very hard and required a lot of expensive hardware and cost a lot to run.
 after hadoop came, it allowed to store large quantaties of data and to scale to an unlimited number of nodes which was not possible before.
 
@@ -57,22 +65,20 @@ The main problems with hadoop are that hadoop is very bad with small files becau
 now, instead of managing a small number of computers, we need to manage all the nodes either ourselves or through a vendor providing us managed hadoop cluster.
 
 
-
 2. **Q:** Can you name a few vendor-specific distributions of Hadoop?
 2. **A:** *Cloudera Distribution Platform* - A managed distribution by cluodera which includes a cloudera cluster manager, integrated security and data governance, *Amazon Elastic MapReduce* - A managed distribution of hadoop with a pay-per-use billing system, automatic scaling and easy integration with other aws products, *Microsoft azure HDInsight* - includes integration with microsoft tools like Power BI and Azure data factory, also billed as a pay-per-use patform.
 
 
-
 3. **Q:** What are the three modes in which Hadoop can run?
-3. **A:** **Standalone (default)** - where it runs as a single java process, used to debug and make simple POC's just to test on a local machine with a small amount of data and is easy and quick to setup, mostly used for quick tests, **Psuedo Distributed** - where there is a single node cluster (many processes on one machine) which simulates the real world but still runs on one machine which is used to test and debug more like a staging area but is more resource intensive and takes more time to setup, **distributed** - a multi node cluster which includes the Namenode, Secondary Namenode and the Datanodes, this is used ion the real world where we need to actually process and store very large amounts of data quickly and efficiently, it is what we use to make big data queries and get valuable knowledge from them.
-
+3. **A:** **Standalone (default)** - where it runs as a single java process, used to debug and make simple POC's just to test on a local machine with a small amount of data and is easy and quick to setup, mostly used for quick tests, **Psuedo Distributed** - where there is a single node cluster (many processes on one machine) which simulates the real world but still runs on one machine which is used to test and debug more like a staging area but is more resource intensive and takes more time to setup, it runs on seperate JVM's to simuilate the real world uses as closely as possible, **distributed** - a multi node cluster which includes the Namenode, Secondary Namenode and the Datanodes, this is used ion the real world where we need to actually process and store very large amounts of data quickly and efficiently, it is what we use to make big data queries and get valuable knowledge from them.
 
 
 4. **Q:** What is the primary role of the `hadoop-env.sh` configuration file?
 4. **A:** The primary role of the hadoop-env is to set environment variables for hadoop and customize the options of the hadoop processes, like client ops (port and host of the cluster), the size of the Mapreduce heap, the classpath of the hadoop scripts and more, in addition to setting up various jave related options like the Hadoop classname which sets the java class against which the hadoop specific variables that it will run against when the excecution of a process continues
 
+
 5. **Q:** What purpose does the `core-site.xml` file serve?
-5. **A:** The purpose of the core site is to configure mostly IO related things and also the filesystem and network addresses.
+5. **A:** The purpose of the core site is to configure mostly IO related things and also the filesystem and network addresses like the Namenode address, the System wide configuration (Mostly IO releted) and file system settings like the default FS to be used (hdfs or local) and other related properties, the location of the Hadoop file system.
 some examples include: 
  - [x] hadoop.security.authentication - either simple (no auth) or kerberos, sets whether to use authentication and which type
  - [x] hadoop.tmp.dir - the base directory where hadoop can store temporary files
@@ -89,11 +95,32 @@ HDFS is the primary storage of the Hadoop applications, based on java and which 
 the *data node* is the node that stores the data itself in the form of blocks which have a max size of a preconfigured amount, default is usually 128 MB but sometimes can be 64 or 256 MB by default.
 It is a rack aware system which means that it knows the physical topology of the network and the connected nodes which it uses to enhence fault tolorence by splitting replicas to different racks (an example with 3 replicas and 2 racks, hadoop will store one replica on the same rack with the name node and 2 more replicas on different racks in a different location / switch).
 
-provides High availability using 2 Name nodes with one being active and one being a standby, in case the active node will fail.
+provides High availability using 2 Name nodes with one being active and one being a standby, in case the active node will fail. (if the High availability mode is on)
+
+Hdfs uses also prefers reads from neighbours 'closer' to it (which are on the same rack) to minimize traffic between racks, meaning if someone needs to read a file, it reads the blocks from nodes which are on the same rack.
 
 Hdfs also has journal nodes which store changes to the file system (file addition, deletion and more) which is an edit log which is used to build the FSImage and the file system structure in the ram.
 
-Hdfs knows that "moving data is more expensive than moving computation" so it has minimal data movement and makes most of the computations in the same node that stores it's data.
+in this mode, all of the datanodes send heartbeats and block reports to all namenodes to allow for faster failover.
+
+The journal nodes are there so that the namenode writes the edit log to the journal nodes as well, so that in the case of failure and in the case that the standby namenode is not in sync, the standby namenode will sync using the Editlogs from the journal nodes.
+
+The Journal nodes allow for reconstruction of the file system even in the case of disk falure of the Active name node and the Standby namenode by saving the Edit logs which can be used to reconstruct the FSImage in the case of hardware failure or losing even both the namenodes, using a cluster of journal nodes which all of the logs are written to all of them to allow for FSImage reconstruction even in the case a journal node fails.
+(it is possible to have both a standby node and a secondary node but this is not needed because the standby node preforms checkpoints of the FSImage in intervale, so it would be a waste of resources)
+
+So when a namenode crashes Zookeeper failover controller detects it and marks the Node as unhealthy, when the namenode crashed it also releases the ephermal node due to the session closing becaused no ping was sent.
+Then the other namenodes from the zookeeper quorum then try to create an ephermal node, and the first one to do so aquires the lock, and becomes the Active namenode, only one Node can own the lock at a time so it guarantees that only one active namenode exists at a time.
+
+in the case of a split brain, the journal nodes will allow only one name node to have the role to write them at a time which removes the possible risk of data loss during a split brain.
+
+because the jouurnal nodes allow only one name node to have the role of writing to them at a time, in the case of the failover, the newly elected active name node only can write to the journal nodes which means that the other namenode won't write anything or in other words, won't be active as it dissallows it to be active, which in turn, allows for the new namenode to continue operations safely.
+
+and in the case of failover, the new Name node will read from the journal nodes and sync the FSImage so that no data would be lost.
+
+If HA is not turned on (default) there is no standby namenode and instead there is a secondary namenode which all it does is read the edit logs and build the FSImage so that if the Namenode falls, it won't have to rebuild the FSimage, which can be a heavy task and cause it to fail again or increase the downtime.
+
+In the case of name node failure, the cluster becomes unavailable up until the namenode restarts.
+
 
 7. **Q:** What is the role of the NameNode in HDFS?
 7. **A:** The role of the NameNode is to save metadata about the file and to manage where they are saved, in addition to managing and saving the FS structure and also replicate / delete replications as needed.
@@ -102,17 +129,25 @@ the namenodes also monitors all the data nodes and knows which are alive and whi
 
 8. **Q:** What is a DataNode in HDFS?
 8. **A:** A DataNode is the node that saves the data itself in the form of blocks with a max size that was configured beforehand in the hdfs-site.
-The datanode also performs the computations and analysis of the data on the machines which allows for less movement of data.
+The datanode also performs the computations and analysis (such as running mapreduce jobs or spark processes, an example could be to detect fradulent activity over a long period of time) of the data on the machines which allows for less movement of data.
 the data nodes send a block report every 6 hours to the namenode which includes all the blocks stored in this data node, in addition to the name of the file, the path ("virtual path") and the block count.
 the data node stores metadata about the file as well, with the same name of the file (blk_{GeneratedNumber}) with the suffix ".meta" which includes the file name, the file path, the block count, the block id, permissions of the file, owner, updated at and other time metadata and file size.
 
 9. **Q:** How does HDFS achieve fault tolerance?
-9. **A:** Hdfs achieves fault tolorence by using *redundency and replication* - duplicating the data multiple times and storing it on different machines so that if hardware failure were to occur, other machines store the replicas so they can be read from there, *rack awareness* - hdfs knows the physical network topology of the datanodes and namenodes and it uses it to better spread the replicas so that even if a rack falls or a network failure occurs, there will still be available replicas on a different switch/rack (if 3 replicas are set, one replica will be stored in the same place as the namenode and the 2 others will be stored in a different rack), in addition to *journal nodes* - nodes that store edit logs of the file system which can be used to reconstruct the file system structure in case of namenode failure and *secondary namenode* - a namenode that takes the edit logs file from the main namenode and constructs the fs image using the current fsimage and updates it in the main namenode, the reason for this is that usually the fs image only gets updated when the namenode restarts which can take a while which will cause the name node to fail the readiness check or crash, so the secondary namenode was created to mitigate this issue by periodically reconstructing the fs image and clearing the edit logs and *Standby namenode* - which waits and periodically syncs with the main name node and is there in case the main namenode crashes, the secondary namenode starts getting the requests and monitoring the dœ†a nodes.
+9. **A:** Hdfs achieves fault tolorence by using *redundency and replication* - duplicating the data multiple times and storing it on different machines so that if hardware failure were to occur, other machines store the replicas so they can be read from there, *rack awareness* - hdfs knows the physical network topology of the datanodes and namenodes and it uses it to better spread the replicas so that even if a rack falls or a network failure occurs, there will still be available replicas on a different switch/rack (if 3 replicas are set, one replica will be stored in the same place as the namenode and the 2 others will be stored in a different rack), in addition to *journal nodes* - nodes that store edit logs of the file system which can be used to reconstruct the file system structure in case of namenode failure and *secondary namenode* - a namenode that takes the edit logs file from the main namenode and constructs the fs image using the current fsimage and updates it in the main namenode, the reason for this is that (in hadoop version 2) usually the fs image only gets updated when the namenode restarts which can take a while which will cause the name node to fail the readiness check or crash, so the secondary namenode was created to mitigate this issue by periodically reconstructing the fs image and clearing the edit logs, however from hadoop 3, the namenodes periodically reconstructs the fs image from the edit logs and clear the edit logs, so the secondary namenodes is used less and *Standby namenode* - which waits and periodically syncs with the main name node and is there in case the main namenode crashes, the secondary namenode starts getting the requests and monitoring the dœ†a nodes.
+From hadoop 3, hdfs uses erasure coding to allow for fault tolorence with smaller data overhead but more computational overhead, it allows hdfs to have a storage overhead of only 50 percent while having the same fault tolorence as if 3 replicas were used.
+
+Hdfs also uses zookeeper to have automatic failover using the zookeeper failover conteroller.
+the zookeeper failover controller does a few things to ensure high availability of the system, these roles include Health monitoring, where zkfc periodically sends pings to the name node to check for its health, if the Name node does not respond in time (which can be configured), the monitor marks it as unhealthy.
+The zkfc also includes the session management with the ephermal nodes to detect whena node loses connection, the active namenode also holds a lock on a special znode which states that it is the active name node, if the session expires the lock gets deleted or released in other words and then a new name node from the quorum can aquire that lock and become the active namenode.
+Zookeeper also tries to aquire that lock and if it succeeds, it is a zookeeper based election which means that it is responsible for the failover and to make it's local namenode the active namenode, which is done by first fencing the crashed namenode if needed and then it transitions it's local namenode to become the active name node.
+
 
 10. **Q:** Can you explain rack awareness in HDFS?
 10. **A:** Rack awareness means that hadoop knows the physical network topology of the network, which allows hadoop to distribute the files such that even if a rack crashed, the data is still available.
 the rack awareness is done by the name node and the job manager which send an rpc resolve request to to all the nodes and use it to get the rack and the host of the node when it starts.
 the practical use of the rack awareness comes when deciding where the replications go, in the case of 3 replications, one replica will be stored in the same rack as the name node and the other 2 will be stored on a different rack, in order to have the least amount of traffic between racks and to allow for fault tolorence in the case a rack falls.
+Rack awareness can also be configured by the user using the `net.topology.node.switch.mapping.impl` configuration in which we can define the topology provider of the topology for the rack awareness that has to implement the `org.apache.hadoop.net.DNSToSwitchMapping` interface, that means that the topology can also be logical and not only physical. 
 
 ### Chapter 3: MapReduce Programming Model
 
