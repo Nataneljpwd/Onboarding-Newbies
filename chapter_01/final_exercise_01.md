@@ -50,11 +50,14 @@
 
 1. **Q:** What is Apache Hadoop?
 1. **A:** Hadoop is a distributed data processing framework that works based on a master-slave architecture which was built with the assumption that hardware failure is the norm and allows for big data processing with easy scaling, to thousands of nodes.
-Hadoop has a few components in it that allow for optimal resource usage and job schedualing while allowing multiple jobs simountaneusly, Hadoop also includes Hdfs which is a distributed file system that saves tha
+Hadoop has a few components in it that allow for optimal resource usage and job schedualing while allowing multiple jobs simountaneusly, Hadoop also includes Hdfs which is a distributed file system that saves the data and allows for parrallel processing on the same machines (data locality)
+Hadoop also contains Mapreduce which is a parrallel data processing framework which hadoop uses, in addition, now there is the Spark framework.
 Hadoop also contains YARN which allows for better and more efficient resource utilization in addition to allowing multiple processes to run in parrallel.
 Yarn works with a quite simple architecture, when it has the resource manager which is responsible for managing the resources of the cluster, the Node manager which Sends the status of the Node to the resource manager and monitors the resources of the Node, then it has the Application managers which are responsible for negotiating resources for an app or a process that we want to run.
 Hadoop is a rack aware system which means that hadoop knows the physical network topology (through a resolve api call through rpc) and can place the data in those placed accordingly to ensure maximum fault tolorence evenif one rack goes down
-Hadoop allows for other processing frameworks to run on it, including Spark, MapReduce, Hive, Hbase and Zepplin.
+Hadoop includes other processing frameworks to run on it which are the main ways that data is processed in hadoop, including Spark, MapReduce, Hive and Hbase.
+Hadoop also includes Zookeeper which is used for managing the Namenodes and having automatic failover, in addition to journal nodes which allow the standby namr node to be in sync all the time and in case of disk failure of the namenodes, the fsimage can be reconstructed.
+usually there are at least three journal nodes which store the edit logs and they sit in the cluster with zookeeper.
 Before hadoop, storage and processing of large quantaties of data was very hard and required a lot of expensive hardware and cost a lot to run.
 after hadoop came, it allowed to store large quantaties of data and to scale to an unlimited number of nodes which was not possible before.
 
@@ -79,6 +82,9 @@ now, instead of managing a small number of computers, we need to manage all the 
 
 5. **Q:** What purpose does the `core-site.xml` file serve?
 5. **A:** The purpose of the core site is to configure mostly IO related things and also the filesystem and network addresses like the Namenode address, the System wide configuration (Mostly IO releted) and file system settings like the default FS to be used (hdfs or local) and other related properties, the location of the Hadoop file system.
+The core site.xml is used by all hadoop daemons which include the datanode servers and the Namenode servers and the yarn daemons along with the Journal nodes.
+while the core site is used to configure things that are more IO reletad like the location of the name nodes and the buffer size when reading data or the authenticaion and zookeeper quorum and heartbeat timeout for the automatic failover along with some security configurations like the kerberos realm, the hdfs site is used to configre more things that are related to the distributed file system like block sizes, replication count along with the max and min amounts of replicas that can exist, write retries of the client, to the data node before failure, the block size and block report interval or in one sentance, things that are more related to the file system functionality itself, which is being used by the namenodes and datanodes exclusively, while . 
+
 some examples include: 
  - [x] hadoop.security.authentication - either simple (no auth) or kerberos, sets whether to use authentication and which type
  - [x] hadoop.tmp.dir - the base directory where hadoop can store temporary files
@@ -97,9 +103,11 @@ It is a rack aware system which means that it knows the physical topology of the
 
 provides High availability using 2 Name nodes with one being active and one being a standby, in case the active node will fail. (if the High availability mode is on)
 
+The standby namenode is the namenode that replaces the active namenode by becoming the active namenode in the case that the current active namnode fails, the stanby though does preform processes while waiting to replace the active NN, it is syncing itself periodically from the journal nodes in oreder to minimize the downtime in case the active NN goes dows, so that it will already have the most synced fsimage and so that it will spend a minimal amount of time syncing and will start immediatelly serving and working.
+
 Hdfs uses also prefers reads from neighbours 'closer' to it (which are on the same rack) to minimize traffic between racks, meaning if someone needs to read a file, it reads the blocks from nodes which are on the same rack.
 
-Hdfs also has journal nodes which store changes to the file system (file addition, deletion and more) which is an edit log which is used to build the FSImage and the file system structure in the ram.
+Hdfs also has journal nodes (at least 3 which sit in the cluster with zookeeper quorum) which store changes to the file system (file addition, deletion and more) which is an edit log which is used to build the FSImage and the file system structure in the ram.
 
 in this mode, all of the datanodes send heartbeats and block reports to all namenodes to allow for faster failover.
 
@@ -111,7 +119,7 @@ The Journal nodes allow for reconstruction of the file system even in the case o
 So when a namenode crashes Zookeeper failover controller detects it and marks the Node as unhealthy, when the namenode crashed it also releases the ephermal node due to the session closing becaused no ping was sent.
 Then the other namenodes from the zookeeper quorum then try to create an ephermal node, and the first one to do so aquires the lock, and becomes the Active namenode, only one Node can own the lock at a time so it guarantees that only one active namenode exists at a time.
 
-in the case of a split brain, the journal nodes will allow only one name node to have the role to write them at a time which removes the possible risk of data loss during a split brain.
+in the case of a split brain, the journal nodes will allow only one name node to have the role to write them at a time which removes the possible risk of data loss during a split brain which is called fencing.
 
 because the jouurnal nodes allow only one name node to have the role of writing to them at a time, in the case of the failover, the newly elected active name node only can write to the journal nodes which means that the other namenode won't write anything or in other words, won't be active as it dissallows it to be active, which in turn, allows for the new namenode to continue operations safely.
 
@@ -127,6 +135,11 @@ In the case of name node failure, the cluster becomes unavailable up until the n
 the metadata is stored in memory and also in a persistant FSImage file, in addition to a local editlog which includes the logs of all the eddits that have happened to the file system structure.
 the namenodes also monitors all the data nodes and knows which are alive and which are down.
 
+23. **Q:** What is the optimal HDFS files size? how does having multiple small files hurt the HDFS?
+23. **A:** The optimal file size in hdfs is the block size which by default is 128 MB, that is because the namenode then needs to allocate only a single block on the data node, in addition to that, when preforming mapreduce or spark jobs, there will be minimal data movement because the amount of mappers is decided by the amount of splits the data has, if we have only one split that means that one mapper wil be assigned which will occupy less resources for that block, and in addition there is less overhead on the file due to it consisting of only one block, so even in the namenode, it only needs to know where each replica is and does not need to know about multiple replicas of different blocks, it is not smaller because then, we create a smaller block and we save the same amount of metadata in the namenode as in the case of a 128 MB file which means that we have the same overhead for the same data or more overhead per MB of data. 
+Small files hurt the hdfs due to the Name node storing the metadata about each file in memory (and on the fsimage), it can cause uneccesarry load on the ram of the name node and occupy the space that could have been used for larger files.
+Due to the namenode ram being one of the limiting factors of the scalability of the cluster (because the metadata of the fs is stored in ram) small files occupy ram memory and if we have a lot of them, we can save substantially less data in the cluster, because instead of saving larger files, we store smaller files, which use the same amount of ram memory on the namenode (almost the same amount) which in extreme cases can cause the namenode server to get an out of memory exception which will cause downtime and might cause data loss (depending on the cluster configuration) or cause realatively long downtime if the exception is thrown as it requires manual resolution by either increasing the size of the heap of the namnenode or adding ram to the name node if the heap size is at its max value.
+
 8. **Q:** What is a DataNode in HDFS?
 8. **A:** A DataNode is the node that saves the data itself in the form of blocks with a max size that was configured beforehand in the hdfs-site.
 The datanode also performs the computations and analysis (such as running mapreduce jobs or spark processes, an example could be to detect fradulent activity over a long period of time) of the data on the machines which allows for less movement of data.
@@ -139,8 +152,12 @@ From hadoop 3, hdfs uses erasure coding to allow for fault tolorence with smalle
 
 Hdfs also uses zookeeper to have automatic failover using the zookeeper failover conteroller.
 the zookeeper failover controller does a few things to ensure high availability of the system, these roles include Health monitoring, where zkfc periodically sends pings to the name node to check for its health, if the Name node does not respond in time (which can be configured), the monitor marks it as unhealthy.
-The zkfc also includes the session management with the ephermal nodes to detect whena node loses connection, the active namenode also holds a lock on a special znode which states that it is the active name node, if the session expires the lock gets deleted or released in other words and then a new name node from the quorum can aquire that lock and become the active namenode.
-Zookeeper also tries to aquire that lock and if it succeeds, it is a zookeeper based election which means that it is responsible for the failover and to make it's local namenode the active namenode, which is done by first fencing the crashed namenode if needed and then it transitions it's local namenode to become the active name node.
+The zookeeper failover controllers stand on the same node that the namenode is running on and is the one responsible for holding the lock (znode) in the zookeeper quorum, to allow for automaic leader election.
+the zkfc health monitor monitors the health of the namenode and in the case of health status change in the namenode, it starts the failover process and the assignment of the new active namenode, it first calls the corresponding zkfailover controller method to start the processing of the failover, if the zkfc detects that an active-standby switch is needed, it starts the failover process by using the active standby elector to conduct automatic primary election, which contacts with zookeeper to complete an automatic backup election and then the active standby elector sends to the zkfc which node becomes the active and which becomes the standby, the zkfc then uses the HASERVICE Rpc protocol to make the namenode it is responsible for either active or standby.
+The zkfc also includes the session management with the ephermal nodes to detect whena node loses connection, the active namenode also holds a lock on a special znode which states that it is the active name node, if the session expires the lock gets deleted or released in other words and then the zkfc of that namenode tries to aquire the lock, and if it succeeds, it makes it's namenode the active namenode.
+
+The failover process has a few stages, when a namenode fails, the zkfc's health monitor detects that there is a change in the health of the namenode, and it decides whether an active-standby switch is required and if it is, it initiates the failover process by calling the active standby elector in zookeeper (in this step, the lock or ephermal znode gets released because the session ends as the node does not work properly), if needed, then the elector interacts with zookeeper to select an active and standby node from the quorum, and then it notifies the zkfc which node needs to be active and which node becomes the standby, then the zookeeper failover controller aquires the lock which fences away all the other nodes other than the one who owns the node, and calls an rpc mehod to switch the namenode to either active or standy mode.
+once the Namenode is up, it first enters in safe mode, which means nothing can be written (and replication stops) to the file system but can be read, and it started getting heartbeats and block reports from the data nodes and getting the block statuses that is until the namenode gets a pre configured amount of safely replicated blocks which have the minimum configured replica count plus an additional 30 seconds and then it exists the safe mode, it then determines which blocks need to be replicated (if needed) and replicates them to the data nodes.
 
 
 10. **Q:** Can you explain rack awareness in HDFS?
