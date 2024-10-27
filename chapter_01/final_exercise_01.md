@@ -58,8 +58,6 @@ Hadoop is a rack aware system which means that hadoop knows the physical network
 Hadoop includes other processing frameworks to run on it which are the main ways that data is processed in hadoop, including Spark, MapReduce, Hive and Hbase.
 Hadoop also includes Zookeeper which is used for managing the Namenodes and having automatic failover, in addition to journal nodes which allow the standby namr node to be in sync all the time and in case of disk failure of the namenodes, the fsimage can be reconstructed.
 usually there are at least three journal nodes which store the edit logs and they sit in the cluster with zookeeper.
-Before hadoop, storage and processing of large quantaties of data was very hard and required a lot of expensive hardware and cost a lot to run.
-after hadoop came, it allowed to store large quantaties of data and to scale to an unlimited number of nodes which was not possible before.
 
 Hadoop started in 2006 by Doug Cutting (working at yahoo at the time) after he and Mike Cafarella had worked on the apache Nutch project which was supposed to be a search engine which could index 1 billion pages but after Doug realized that it could only scale to 20-40 nodes and that it would be too expensive to run, so Doug decided to create a new project named hadoop (the name of his son's yellow elephant toy) and in 2007, yahoo was able to scale hadoop to 1000 nodes and use it,
 in 2008, yahoo has open sourced the project and in july they were able to scale it to 4000 nodes.
@@ -162,7 +160,7 @@ once the Namenode is up, it first enters in safe mode, which means nothing can b
 
 10. **Q:** Can you explain rack awareness in HDFS?
 10. **A:** Rack awareness means that hadoop knows the physical network topology of the network, which allows hadoop to distribute the files such that even if a rack crashed, the data is still available.
-the rack awareness is done by the name node and the job manager which send an rpc resolve request to to all the nodes and use it to get the rack and the host of the node when it starts.
+the rack awareness is done by the name node and the job manager which send an rpc resolve request to all the nodes and use it to get the rack and the host of the node when it starts.
 the practical use of the rack awareness comes when deciding where the replications go, in the case of 3 replications, one replica will be stored in the same rack as the name node and the other 2 will be stored on a different rack, in order to have the least amount of traffic between racks and to allow for fault tolorence in the case a rack falls.
 Rack awareness can also be configured by the user using the `net.topology.node.switch.mapping.impl` configuration in which we can define the topology provider of the topology for the rack awareness that has to implement the `org.apache.hadoop.net.DNSToSwitchMapping` interface, that means that the topology can also be logical and not only physical. 
 
@@ -205,8 +203,7 @@ the first sort happens between workers meaning data is moved between workers, an
 15. **Q:** Can a MapReduce job have zero Reducers?
 15. **A:** Yes, the reducer part of the Mapreduce is optional, not all works require reducing, an example is converting formats, we would like to map the data but wont need to reduce it.
 
-source:
-https://www.databricks.com/glossary/mapreduce#:~:text=Unlike%20the%20map%20function%20which,the%20reduce%20function%20is%20optional.
+[source](https://www.databricks.com/glossary/mapreduce#:~:text=Unlike%20the%20map%20function%20which,the%20reduce%20function%20is%20optional)
 
 ### Chapter 4: Hadoop YARN
 
@@ -227,7 +224,7 @@ https://www.databricks.com/glossary/mapreduce#:~:text=Unlike%20the%20map%20funct
 ### Chapter 6: Apache ZooKeeper
 
 26. **Q:** What is Apache ZooKeeper and what role does it play in a distributed environment?
-26. **A:** Zookeeper is a distributed configuration manager  and coordinator that holds different configurations for different systems which allows different systems to coordinate with each other and allows for a single source of  truth for configuration.
+26. **A:** Zookeeper is a distributed configuration manager  and coordinator that holds different configurations for different systems which allows different systems to coordinate with each other and allows for a single source oftruth for configuration.
 Zookeeper allows to coordinate between different nodes on a distributed system, allows for rolling configuration changes and helps in leader election and distributed locks.
 Zookeeper also provides functionality of failover recovery and automatic leader election
 
@@ -235,12 +232,12 @@ Zookeeper also provides functionality of failover recovery and automatic leader 
 27. **A:** ZNodes are Nodes which store data, are similiar to files and directories, they can be used to store data in a distributed system. z nodes contain data and the version of the data to allow for versioning and also include timestamps for cache validation.
 
 28. **Q:** How does ZooKeeper handle coordination and configuration management across distributed systems?
-28. **A:** Zookeeper handles coordination and configuration management using watches (watches are a mechanism that allows sending notifications to clients through pushing and not pulling, to which the clients whome are subscribed can react accordingly) where clients can listen to changes, and atomicity (every action is atomic, meaning that there could be no race conditions and every action is either finished fully or not done at all) and sessions (client connect to the zookeeper server using sessions which are connections that are kept alive using heartbeats which are sent in fixed intervals which are configured using the zookeeper.connection.timeout.ms configuration option) which aid in the process of the coordination
+28. **A:** Zookeeper handles coordination and configuration management using watches (watches are a mechanism that allows sending notifications to clients through pushing and not pulling, to which the clients whome are subscribed can react accordingly) where clients can listen to changes, atomicity (every action is atomic, meaning that there could be no race conditions and every action is either finished fully or not done at all) and sessions (client connect to the zookeeper server using sessions which are connections that are kept alive using heartbeats which are sent in fixed intervals which are configured using the zookeeper.connection.timeout.ms configuration option) which aid in the process of the coordination
 Zookeeper uses a shared hirarchiel namespace and znodes to create a system similiar to a file system which allows for coordination between the distributed nodes
 Zookeeper exposes a naming service which allows to identify nodes by name, similiar to a dns but for nodes in a distributed system, this helps nodes coordinate by simplifying the process of node discovery.
 Zookeeper also include cluster management which include the status of the nodes in the cluster in real time.
 Leader election by using ephermal nodes and watches, using a session that creates the ephermal node (a node alive while the session is active) and sending notifications to the system when the current leader dies/becomes unavaliable.
-Locking and syncronization - zookeeper also exposes a locking and a syncronization service which allows for distributed locking (for data modification and could also be used for almost instant standby service takeover) and syncronize between processes that use the same resourceds.
+Locking and syncronization - zookeeper also exposes a locking and a syncronization service which allows for distributed locking (for data modification and could also be used for almost instant standby service takeover) and syncronize between processes that use the same resources.
 Zookeeper also has a highly reliable data registry, meaning that even if some nodes fail, the data is still available through the use of data redundency.
 
 
@@ -294,7 +291,7 @@ Kafka also allows the use of acknoledgmentes, where after the data is sent, we w
 
 40. **Q:** What is the difference between a Kafka Producer and a Consumer?
 40. **A:** kafka producer can only write data to the topic while a consumer reads data from the topic.
-the producer writes to a topic and the broker decides to which partition it goes according to the key, and the consumer reads from a specific partition as a part of a consumer group, which share the same offset for reading from the topic, each consumer is assigned one partition, meaning only one consumer group can read from a partition, the partition is assigned to a consumer group by lexographical order.
+the producer writes to a topic and the broker decides to which partition it goes according to the key, and the consumer reads from a specific partition as a part of a consumer group, which share the same offset for reading from the topic, each consumer is assigned one partition, meaning only one consumer can read from a partition, the partition is assigned to a consumer group by lexographical order.
 
 
 ### Chapter 10: Apache Impala
