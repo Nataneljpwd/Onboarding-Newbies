@@ -145,3 +145,34 @@
 
 27. **Q:** What happens during NN startup?
 27. **A:** When a NN starts, the first thing it does is load the fsimage to memory and apply the edits from the edit logs, once it has reconstructed the fsimage, it creates a new updated fsimage file (or checkpointing) and empties the edit logs, during this process, the NN is running in safe mode, meaning that it is in a readonly mode to the clients, during this mode, any block replication stops until it knows about a certain amount of blocks (defualt is 99.9%) that are replicated enough (have above the dfs.namenode.replication.min amount of replicas), and after 30 seconds and it has a 99.9% blocks that are replicated enough, it exists safe mode and scheduales the under or miss replicated blocks for replication as well as taking count of the missing and currupted blocks. 
+
+
+28. **Q:** Where do journal nodes save the latest transaction id?
+28. **A:** JN save the latest transaction id as the file name, the file looks like so: edits-{timestamp}-{transaction_id} so it can know from that the latest transaction it got.
+
+29. **Q:** How do snapshots look like?
+29. **A:** Snapshots are saved in the same directory by creating a hidden directory in the same directory of the creation of the snapshot and it saves the directories and files and looks like so: snapshot of foo/: foo/.snapshot/folders_of_foo_recursive (including the files), and they work by making deletes act as soft deletes meaning that the blocks of a file are not deleted, rather only the metadata in the namenode of the location of the file is deleted (but it is still accesible because of the snapshot).
+
+30. **Q:** When does checkpointing happen and where?
+30. **A:** Checkpointing happens in any node when it restarts or in the standby NN when the edits take over 64MB of disk space or when a certain amount of time since the last checkpointing was done.
+
+31. **Q:** What are the advantages and disadvantages of deploying the JN's on a Network File System?
+31. **A:** The advantages are that it is easier to sync between the JN's which can be done by just copying the edits files from one JN to the other over the NFS, another advantage is that in case of failure of the JN, it's edits are still accesible and even if disk corruption happens, the NFS can be deployed on a RAID NFS so that the data won't be lost.
+    The disadvantages are that reads now become way slower which can cause the JN's to become out of sync.
+
+32. **Q:** What is a NFS?
+32. **A:** A NFS is a mechanism (or protocol) for storing files on the network, it is a distributed file system that allows users of the network shared access to files and directories which are located on remote computers and allow the users to treat the files and directories as if they were local (allowing for system calls on the remote files).
+    The NFS package includes commands for daemons for the NFS and NIS (Network Information Service).
+    The NFS was developed in 1984 by Sun microsystems and was one of the first distributed systems ever.
+    The NFS must include the next components in order to work properly:
+        - NFS Server: the host which hosts the files of the network mounted file system.
+        - NFS Client: the client used to interact with the NFS.
+        - Network: the NFS has to be connected to the ip network which will be used to share the data.
+    All NFS clients have to be connected to the same server in order to have access to the mounted FS.
+    The NFS server has to run the NFS daemon which is responsible for responding to the client's requests.
+    The NFS should also have a mount point which is a shared directory that is used to identify the NFS.
+    Each client of the NFS can have different permissions which help in disallowing access to certain files or making sure that only select people can modify a file.
+    There were a few versions of NFS, NFSv2 which used UDP and was stateless meaning that servers don't need to track client sessions and instead the clients had to send a complete detalied request every time they wanted to access a file, and the max file size was set at 2GB.
+    Then NFS version 3 came out which removed the file size limitation and moved from UDP to TCP making it easier to use on a WAN.
+    The latest version of NFS is version 3, which introduced authentication and privacy options as well as a statefull protocol.
+    It also uses both TCP and UDP which made it easier to run the NFS daemons over firewalls and improved read and write speeds.
