@@ -6,11 +6,13 @@
     - Storage: scaling out can take a lot of space because we need physical space for all the machines.
     - Complexity: when scaling out, we need to manage all of our machines rather than managing just one or single digit machines.
 
+
 2. **Q:** When are edit logs deleted?
 2. **A:** Edit logs are deleted when:
     - a name node restarts.
     - when the secondary name node reconstructs the FSimage with the edit logs.
     - when the log is no longer needed (i.e was processed).
+    
 
 3. **Q:** What are the use cases where we have a map but not a reduce job?
 3. **A:** There are a few such use cases, which include:
@@ -19,9 +21,11 @@
     - Data converter: when converting data, lets say from celcius to fahrenheit or converting words to their respective length.
     - Data copying or syncing: when we copy data in parrallel, we run map jobs across the cluster without any reduce jobs, and example is distcp.
 
+
 4. **Q:** What is an audit log and what audit logs are saved in hdfs?
 4. **A:** Audit logs record the occurance of an event, the time of the event, the user who caused the event and the affected entity.
           Audit logs record events of administration activity, data access and modification, user denial or login failure and system wide changes.
+          In Hdfs, audit logs are saved for each block access, block deletion or directory changes (deletion or adding a file).
 
 
 5. **Q:** What is a rack?

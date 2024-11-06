@@ -208,10 +208,69 @@ the first sort happens between workers meaning data is moved between workers, an
 ### Chapter 4: Hadoop YARN
 
 16. **Q:** What is YARN?
+16. **A:** YARN is a resource manager and a schedualer that manages resources on a hadoop cluster, it was introduced along with hadoop 2 (in 2014) to allow for better cluster utilization and allow for MapReduce processes to run faster and allow them to run in paralel to each other, however it is general enough to allow for other distributed computing paradigms.
+    Yarn provides an API for requesting and working with cluster resources, but they are not used by the users, as the users build using higher level API's of processing applications which are built on top of YARN, while hiding the resource requesting and managemant away from the end user.
+    Yarn works by having 2 long running daemons which are the Resource Manager (RM) and the Node Manager (NM), Yarn also provides another daemon which is not a long running daemon called the Application Master (AM) which is created for each application that is run on Yarn and stops running once the application has finished running.
+    When creating a distributed computing job to run on a Yarn cluster, it is called an application which can be either a single job i.e a mapreduce job or a DAG of jobs or as described in the book "Apache Hadoop Yarn" by Arun C. Murthy it is an instance of a framework specific library.
+    - *Resource Manager*: manages the resources for the cluster and is responsible for schedualing the jobs to be run and telling the Node Managber to create a container.
+    The RM is also responsible for dealocating resources if an application with higher priority has to be run.
+    There is only one instance of the RM for the entire cluster (assuming no HA, if HA is on, there are at least 2 RM's running with as active-standby).
+    The RM works as a schedualer and it optimizes for cluster utilization, meaning it tries to keep the whole cluster in use all the time, against constraints like fairness, SLA's and capacity guarantees.
+    - *Node Manager*: monitors the resource usage of the node, it is also responsible for creating the containers on which the processes run on, it creates the container with the requested resources when requested.
+    The NM's run by having one instance of the NM on each node in the cluster on which we want to run different applications.
+    - *Application Master*: negotiates resources with the RM and asks the NM to create containers for the application to run on, it lives as long as the application is running.
+    The NM also monitors the container resource usage as well as the node health and managing the logs of the Node and containers.
+    The AM was created to move the complexity from the RM to the AM, which allows for more flexibility to the application framework authors.
+    Because the AM is a user application, we can't trust it, so no AM is run as a priveleged service, this also means that we have to protect YARN from faulty or malicious AM's.
+    The AM has to provide fault tolorence for the reources rather than the RM doing it.
+    The AM can ask for resources with highly specific requirements like:
+    - Resource Name: either hostname or rackname or a complex network topology.
+    - Amount of RAM.
+    - CPU count: count and type of cpu.
+    - GPU count
+
+    The AM can dynamically request and recieve resources from the RM, it can also be asked to deallocate resources (called preempetion) which can be done either gracefully or forcefully by the NM.
+
+
 17. **Q:** What are the main components of YARN?
+17. **A:** The main components of YARN include:
+    - *Resource Manager*: manages the resources for the cluster and is responsible for schedualing the jobs to be run and telling the Node Managber to create a container.
+    The RM is also responsible for dealocating resources if an application with higher priority has to be run.
+    There is only one instance of the RM for the entire cluster (assuming no HA, if HA is on, there are at least 2 RM's running with as active-standby).
+    The RM works as a schedualer and it optimizes for cluster utilization, meaning it tries to keep the whole cluster in use all the time, against constraints like fairness, SLA's and capacity guarantees.
+    - *Node Manager*: monitors the resource usage of the node, it is also responsible for creating the containers on which the processes run on, it creates the container with the requested resources when requested.
+    The NM's run by having one instance of the NM on each node in the cluster on which we want to run different applications.
+    - *Application Master*: negotiates resources with the RM and asks the NM to create containers for the application to run on, it lives as long as the application is running.
+    The NM also monitors the container resource usage as well as the node health and managing the logs of the Node and containers.
+    The AM was created to move the complexity from the RM to the AM, which allows for more flexibility to the application framework authors.
+    Because the AM is a user application, we can't trust it, so no AM is run as a priveleged service, this also means that we have to protect YARN from faulty or malicious AM's.
+    The AM has to provide fault tolorence for the reources rather than the RM doing it.
+    The AM can ask for resources with highly specific requirements like:
+    - Resource Name: either hostname or rackname or a complex network topology.
+    - Amount of RAM.
+    - CPU count: count and type of cpu.
+    - GPU count
+
+    The AM can dynamically request and recieve resources from the RM, it can also be asked to deallocate resources (called preempetion) which can be done either gracefully or forcefully by the NM.
+    
+
 18. **Q:** What is the Resource Manager in YARN?
+18. **A:** The RM is a daemon running on a node where there exists one active RM per cluster, and it's responsibilites are allocating resources and allowing for applications to negotiate resrouces, along with schedualing the applications.
+    The RM has 3 types of schedualers, *FIFO Schedualer* - a schedualer which scheduales jobs while giving them the entire cluster for resources, which can cause poor cluster utilization and slower execution times for large tasks (we wait longer for bigger tasks), a *Capacity Schedualer* - a schedualer which guarantees a certain minimum of capacity for each queue (there can be multiple queues) and gives them resources by the configured minimum or by the weights set for the queue, there can also be nested queues which allow for better cluster management and cluster splitting between parts of an organization or clients if we are a job provider, the schedualer works by allocating resources for a job and if it needs more it can give it more resources but when another job comes, it might kill some of the containers created by the AM in order to free some resources and give the other job from the different queue the minimum resources that it guarantees, *Fair Schedualer* - works by allowing all jobs a fair share of the resources, can have nested queues and weights of the queues to allow for some hirarchiel distribution, the schedualer works by giving a job all the resources available, and if another job is started, it cuts down the resourses of the first job such that now both the jobs have half the resources of the queue.
+
+
 19. **Q:** What is the role of the Node Manager in YARN?
+19. **A:** The role of the NM is to monitor the node health on top of which it sits, monitor the resource usage of the node and of the containers which are spun up on it and also to start containers (by getting a CLC (or container launch context which includes data like what resources need to be allocated along with data and tokens to verify that the request is authenticated and granted by the RM) which can be verified for integrety) it also manages all the logs of the containers running on it.
+    The node manager is also responsible for killing the containers which the RM asks it to kill if trying to get the resources gracefully does not work.
+
+
 20. **Q:** How does YARN provide fault tolerance?
+20. **A:** YARN provides fault tolorence in 3 ways:
+    1) *Resource Manager Failure*: In case of resource manager failure, the RM uses an active standby architecture using the ZKFC or an embeded ActiveStandbyElector which in case of RM failure, the standby RM becomes active by aquiring the lock, which fences away the other RM because the ZKRMStateStore allows only one writer, the standby RM got the lock and now can get the data from zookeeper (from the ZKRMStateStore) and continues working as if failure did not happen.
+    2) *Application Manager Failure*: In case of AM failure, the RM will notice that because the AM did not send a heartbeat and it will start a new AM and will kill the container of the prevoius AM (if it still exists) and the new AM will use the job history server (which stores the history of the jobs which were finished) and restart only the non-finished job, and it is allowed to fail up to 2 times.
+    3) *Node Manager*: If the NM did not send heatbeats to the RM for 10 minutes, the RM detects that the NM has failed and the RM will remove it from the pool of the nodes on which containers can run, and any tasks currently running the jobs will be recovered in another node and the AM will rerun the finished and not finished tasks that were run on the bad node again to recover the results.
+    In the case that a task fails to run on a node 3 times, the node will be blacklisted by the AM, and no more jobs will be tried on that node (for the specific application).
+
 
 ### Chapter 5: Apache Hive
 
