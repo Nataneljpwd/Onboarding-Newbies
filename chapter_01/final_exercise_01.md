@@ -422,10 +422,49 @@ The block tokens don't contain data about the principa from which they query the
 ### Chapter 13: Oozie Workflow Scheduler
 
 56. **Q:** What is Apache Oozie, and how does it facilitate job scheduling and workflow management in a Hadoop environment?
+56. **A:** Apache Oozie is a workflow schedualer that was created in 2011 and is used to create, schedule and run DAG's (Directed Acyclic Graphs) using hadoop jobs like Mapreduce or Pig jobs.
+    Oozie uses a special file to describe the workflow that we want to run, it is described in an xml file using hPDL (hadoop process defenition language) but with additional plugins, it is possible to use other files like a groovy DSL or yaml.
+    Oozie allows to schedule jobs that run one after the other or some to be run in parrallel using different execution control nodes which include:
+        - *Start Node* (entrypoint): This node specifies with which action we should start executing the workflow, there must be one such node in a workflow defenition.
+        - *End Node*: If this node is reached, it means that the workflow has finished successfuly, there must be one such node in a workflow defenition.
+        - *Kill Node*: If this node is reached, it kills the execution of the workflow, the workflow will be done with a KILLED state, there can be zero or more.
+        - *Fork Node*: This node allows to fork the execution of a workflow by creating 2 processes which run in parrallel, there can be zero or more of these nodes.
+        - *Join Node*: This node waits for all the forked processes of the last fork to finish before allowing continuation of the DAG.
+        - *Decision Node*: This node acts as a switch case that can be used to run different actions in case of different situations, there can be one or more of these in the workflow defenition.
+
+    Oozie works using a simple architecture with a few simple components (non HA):
+        - *Oozie server*: A daemon that runs on an apache tomcat web server that is responsible for starting and scheduling the workflow and managing the workflow i.e tracking finished actions in the workflow currently running and starting the new action once the prevois has finished.
+        it saves the state of the workflow in a databese and updtes when each action has finished.
+        - *Oozie Database*: A database where all the data about the jobs is saved, i.e which jobs have finished, which haven't been run and also the workflow defenition is saved in the db, the db can be either Apache Derby, HSQL, Oracle,  MySQL, or PostgreSQL.
+        - *Oozie client*: The client used to communicate with Oozie, it is used to submit and start different workflows, there are 3 different clients that we can use, a java API client, a CLI client or a web based client (all provide same functionality).
+
+    Oozie can also be run in a HA mode, where we use redundency to allow for fault tolorence, because the Oozie server is stateless, we can use the following architecture:
+    A load balancer (that does liveness checks) to act as a GW to the Oozie servers, multiple Oozie servers under the load balancer which connect to a PostgreSQL, Oracle or MySQL database, which also has a master-slave like architecture where one of the db's get all writes and the other syncs with the other and allows for only reads, in case of failure, the roles get switched and the slave db now becomes the master db.
+    this architecture provides fault tolorence without many additional services because the application is a stateless application.
+
+
 57. **Q:** Can you differentiate between an Oozie Workflow job and a Coordinator job? Provide an example of when you would use each.
+57. **A:** We can tell the difference between a workflow job and a coordinator job by looking to see if it has a frequency tag, if it does that means it is a coordinator job, while workflow jobs are a DAG of actions.
+    Oozie workflow is a job that is run when an oozie client triggers it, however a coordinator job runs once a certain parameter or condition has been reached, it allows to trigger actions or workflows when specified conditions are met (can also be scheduled to run at a certain time of day).
+    A workflow defines a set of actions to be run one after the other (or a single action) and defines a DAG to be run, while the coordinator is more like a trigger which triggers actions from workflows, or workflows when preconfigured conditions are met, so while the workflow defines what to run and how, the coordinator defines when the job will be run, an example may be when we want to do a job like counting the word occurences in a book and finding books with similiar word occurences only one time or each time a user adds a book to the repository.
+    We would use a workflow when we want to process data when the processing may require multiple steps to complete, and when we want to choose ourslves when to run it, either through the cli manually or through our own program automatically with our custom conditions, and we would use a Coordinator job when we want to run a job at certain times of day every day (or be able to schedule the job) or when there is enough data available (for batching), an example might analyzing sales data at the end of the day so that the results will be available for review the next day.
+
+
 58. **Q:** Describe the lifecycle of an Oozie job. What are the typical states an Oozie job can be in, and what are the implications of each state?
+58. **A:** The typical states of an oozie job are: 
+    - *PREP*: when the job is being prepared to be run, i.e resources have been requested from yarn but the application still isn't running.
+    - *RUNNING*: when the job started running, and the actions start running.
+    - *SUSPENDED*: either when the user manually suspends the job or when an error occurs during execution (i.e a not found error) the job gets suspend to allow the user to fix the problem in the workflow and then continue the execution.
+    - *KILLED*: when a all jobs get to a kill control node or when a user manually kills the job.
+    - *FAILED*: when an unrecoverable error occured or when we reached an error block and the action we executed threw an error.
+    - *SUCCEEDED*: when a job ran successfuly and finished well.
+
 59. **Q:** How does Oozie support SLA (Service Level Agreement) monitoring, and why is it important in managing data processing jobs?
+59. **A:** Oozie supports SLA monitoring by
+
+
 60. **Q:** What are the main components of an Oozie Workflow job, and what is the role of each component?
+
 
 ## SKILA :pinched_fingers: :boxing_glove:
 - The mentors will ask you qustions from their experience, prepare yourself to answer them.
