@@ -460,13 +460,22 @@ The block tokens don't contain data about the principa from which they query the
     - *SUCCEEDED*: when a job ran successfuly and finished well.
 
 59. **Q:** How does Oozie support SLA (Service Level Agreement) monitoring, and why is it important in managing data processing jobs?
-59. **A:** Oozie supports SLA monitoring by
+59. **A:** Oozie supports SLA monitoring by allowing the user to set SLA parameters for the workflow which include: nominal-time (the time to which the SLA's should be calculated relative to), should-start (when the workflow should start, realative to the nominal-time), should-end (the time in which the workflow should stop running while finishing the jobs), max-duration (the max duration the workflow should take) and additional attribures which include alert-events which tell on which events an email alert should be sent and alert-contact that includes a comma seperated list of the emails that should get recieve the alert.
+    Oozie tracks the job start, end, and duration and in the end shows a status as one of the listed bellow:
+    - Not_Started: the job hasn't started yet.
+    - In_Proccess: the job has started.
+    - MET: when a job meets the should_end criteria.
+    - MIS: when a job missed the should_end.
 
 
 60. **Q:** What are the main components of an Oozie Workflow job, and what is the role of each component?
+60. **A:** The main components of Oozie are the Oozie server, the repository and the client:
+    - *Oozie Server*: the Oozie server is the component that starts the jobs of the workflow and manages the execution of actions (when one action has ended, it starts the next one if it exists) which includes the scheduler (that schedules the coordinated jobs and regular jobs) and the workflow engine which starts the jobs through yarn on hadoop.
+    - *Oozie Repository*: stores all the data about the workflow and running jobs, stores which jobs have been ran and the workflow itself of the jobs.
+    - *Oozie Cleint*: the client which can be used to start or schedule a workflow with oozie on the hadoop cluster.
 
 
-## SKILA :pinched_fingers: :boxing_glove:
+##r SKILA :pinched_fingers: :boxing_glove:
 - The mentors will ask you qustions from their experience, prepare yourself to answer them.
 
 ## Wrapping Up :hourglass_flowing_sand:
